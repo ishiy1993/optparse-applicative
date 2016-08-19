@@ -12,8 +12,10 @@ import qualified Examples.Formatting as Formatting
 
 import           Control.Applicative
 import           Control.Monad
+import           Data.ByteString (ByteString)
 import           Data.List hiding (group)
 import           Data.Semigroup hiding (option)
+import           Data.String
 
 import           System.Exit
 import           Test.QuickCheck hiding (Success, Failure)
@@ -188,7 +190,8 @@ prop_help_on_empty_sub = once $
 
 prop_many_args :: Property
 prop_many_args = forAll (choose (0,2000)) $ \nargs ->
-  let p = many (argument str idm)
+  let p :: Parser [String]
+      p = many (argument str idm)
       i = info p idm
       result = run i (replicate nargs "foo")
   in  assertResult result (\xs -> nargs === length xs)
@@ -227,7 +230,8 @@ prop_completion = once . ioProperty $
 
 prop_bind_usage :: Property
 prop_bind_usage = once $
-  let p = many (argument str (metavar "ARGS..."))
+  let p :: Parser [String]
+      p = many (argument str (metavar "ARGS..."))
       i = info (p <**> helper) briefDesc
       result = run i ["--help"]
   in assertError result $ \failure ->
@@ -245,21 +249,24 @@ prop_issue_19 = once $
 
 prop_arguments1_none :: Property
 prop_arguments1_none =
-  let p = some (argument str idm)
+  let p :: Parser [String]
+      p = some (argument str idm)
       i = info (p <**> helper) idm
       result = run i []
   in assertError result $ \_ -> property succeeded
 
 prop_arguments1_some :: Property
 prop_arguments1_some = once $
-  let p = some (argument str idm)
+  let p :: Parser [String]
+      p = some (argument str idm)
       i = info (p <**> helper) idm
       result = run i ["foo", "--", "bar", "baz"]
   in  assertResult result (["foo", "bar", "baz"] ===)
 
 prop_arguments_switch :: Property
 prop_arguments_switch = once $
-  let p =  switch (short 'x')
+  let p :: Parser [String]
+      p =  switch (short 'x')
         *> many (argument str idm)
       i = info p idm
       result = run i ["--", "-x"]
@@ -452,7 +459,8 @@ prop_reader_error_mplus = once $
 
 prop_missing_flags_described :: Property
 prop_missing_flags_described = once $
-  let p = (,,)
+  let p :: Parser (String, String, Maybe String)
+      p = (,,)
        <$> option str (short 'a')
        <*> option str (short 'b')
        <*> optional (option str (short 'c'))
@@ -463,7 +471,8 @@ prop_missing_flags_described = once $
 
 prop_many_missing_flags_described :: Property
 prop_many_missing_flags_described = once $
-  let p = (,)
+  let p :: Parser (String, String)
+      p = (,)
         <$> option str (short 'a')
         <*> option str (short 'b')
       i = info p idm
@@ -473,7 +482,8 @@ prop_many_missing_flags_described = once $
 
 prop_alt_missing_flags_described :: Property
 prop_alt_missing_flags_described = once $
-  let p = option str (short 'a') <|> option str (short 'b')
+  let p :: Parser String
+      p = option str (short 'a') <|> option str (short 'b')
       i = info p idm
   in assertError (run i []) $ \failure ->
     let text = head . lines . fst $ renderFailure failure "test"
@@ -481,7 +491,8 @@ prop_alt_missing_flags_described = once $
 
 prop_many_pairs_success :: Property
 prop_many_pairs_success = once $
-  let p = many $ (,) <$> argument str idm <*> argument str idm
+  let p :: Parser [(String, String)]
+      p = many $ (,) <$> argument str idm <*> argument str idm
       i = info p idm
       nargs = 10000
       result = run i (replicate nargs "foo")
@@ -489,7 +500,8 @@ prop_many_pairs_success = once $
 
 prop_many_pairs_failure :: Property
 prop_many_pairs_failure = once $
-  let p = many $ (,) <$> argument str idm <*> argument str idm
+  let p :: Parser [(String, String)]
+      p = many $ (,) <$> argument str idm <*> argument str idm
       i = info p idm
       nargs = 9999
       result = run i (replicate nargs "foo")
@@ -497,10 +509,20 @@ prop_many_pairs_failure = once $
 
 prop_many_pairs_lazy_progress :: Property
 prop_many_pairs_lazy_progress = once $
-  let p = many $ (,) <$> optional (option str (short 'a')) <*> argument str idm
+  let p :: Parser [(Maybe String, String)]
+      p = many $ (,) <$> optional (option str (short 'a')) <*> argument str idm
       i = info p idm
       result = run i ["foo", "-abar", "baz"]
   in assertResult result $ \xs -> [(Just "bar", "foo"), (Nothing, "baz")] === xs
+
+prop_bytestring_reader :: Property
+prop_bytestring_reader = once $
+  let t = "testValue"
+      p :: Parser ByteString
+      p = argument str idm
+      i = info p idm
+      result = run i ["testValue"]
+  in assertResult result $ \xs -> fromString t === xs
 
 ---
 

@@ -96,6 +96,7 @@ module Options.Applicative.Builder (
 
 import Control.Applicative
 import Data.Semigroup hiding (option)
+import Data.String (fromString, IsString)
 
 import Options.Applicative.Builder.Completer
 import Options.Applicative.Builder.Internal
@@ -113,17 +114,23 @@ auto = eitherReader $ \arg -> case reads arg of
   _         -> Left $ "cannot parse value `" ++ arg ++ "'"
 
 -- | String 'Option' reader.
-str :: ReadM String
-str = readerAsk
+--   Polymorphic on IsString since 0.14.
+str :: IsString s => ReadM s
+str = fromString <$> readerAsk
 
 -- | Convert a function in the 'Either' monad to a reader.
-eitherReader :: (String -> Either String a) -> ReadM a
-eitherReader f = readerAsk >>= either readerError return . f
+--   Example:
+--   > import qualified Data.Attoparsec.Text as A
+--   > attoReader :: A.Parser a => ReadM a
+--   > attoReader = eitherReader . A.parseOnly
+eitherReader :: IsString s => (s -> Either String a) -> ReadM a
+eitherReader f = str >>= either readerError return . f
 
 -- | Convert a function in the 'Maybe' monad to a reader.
-maybeReader :: (String -> Maybe a) -> ReadM a
-maybeReader f = eitherReader $ \arg ->
-  maybe (Left $ "cannot parse value `" ++ arg ++ "'") pure . f $ arg
+maybeReader :: IsString s => (s -> Maybe a) -> ReadM a
+maybeReader f = do
+  arg  <- readerAsk
+  maybe (readerError $ "cannot parse value `" ++ arg ++ "'") return . f . fromString $ arg
 
 -- | Null 'Option' reader. All arguments will fail validation.
 disabled :: ReadM a
