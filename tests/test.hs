@@ -131,7 +131,8 @@ prop_alt_cont = once $
 
 prop_alt_help :: Property
 prop_alt_help = once $
-  let p = p1 <|> p2 <|> p3
+  let p :: Parser (Maybe (Either String String))
+      p = p1 <|> p2 <|> p3
       p1 = (Just . Left)
         <$> strOption ( long "virtual-machine"
                      <> metavar "VM"
@@ -146,7 +147,8 @@ prop_alt_help = once $
 
 prop_nested_commands :: Property
 prop_nested_commands = once $
-  let p3 = strOption (short 'a' <> metavar "A")
+  let p3 :: Parser String
+      p3 = strOption (short 'a' <> metavar "A")
       p2 = subparser (command "b" (info p3 idm))
       p1 = subparser (command "c" (info p2 idm))
       i = info (p1 <**> helper) idm
@@ -154,7 +156,8 @@ prop_nested_commands = once $
 
 prop_drops_back_contexts :: Property
 prop_drops_back_contexts = once $
-  let p3 = strOption (short 'a' <> metavar "A")
+  let p3 :: Parser String
+      p3 = strOption (short 'a' <> metavar "A")
       p2 = subparser (command "b" (info p3 idm)  <> metavar "B")
       p1 = subparser (command "c" (info p3 idm)  <> metavar "C")
       p0 = (,) <$> p2 <*> p1
@@ -163,7 +166,8 @@ prop_drops_back_contexts = once $
 
 prop_context_carry :: Property
 prop_context_carry = once $
-  let p3 = strOption (short 'a' <> metavar "A")
+  let p3 :: Parser String
+      p3 = strOption (short 'a' <> metavar "A")
       p2 = subparser (command "b" (info p3 idm)  <> metavar "B")
       p1 = subparser (command "c" (info p3 idm)  <> metavar "C")
       p0 = (,) <$> p2 <*> p1
@@ -172,7 +176,8 @@ prop_context_carry = once $
 
 prop_help_on_empty :: Property
 prop_help_on_empty = once $
-  let p3 = strOption (short 'a' <> metavar "A")
+  let p3 :: Parser String
+      p3 = strOption (short 'a' <> metavar "A")
       p2 = subparser (command "b" (info p3 idm)  <> metavar "B")
       p1 = subparser (command "c" (info p3 idm)  <> metavar "C")
       p0 = (,) <$> p2 <*> p1
@@ -181,7 +186,8 @@ prop_help_on_empty = once $
 
 prop_help_on_empty_sub :: Property
 prop_help_on_empty_sub = once $
-  let p3 = strOption (short 'a' <> metavar "A" <> help "both commands require this")
+  let p3 :: Parser String
+      p3 = strOption (short 'a' <> metavar "A" <> help "both commands require this")
       p2 = subparser (command "b" (info p3 idm)  <> metavar "B")
       p1 = subparser (command "c" (info p3 idm)  <> metavar "C")
       p0 = (,) <$> p2 <*> p1

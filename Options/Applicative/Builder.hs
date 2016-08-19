@@ -235,7 +235,7 @@ argument p (Mod f d g) = mkParser d g (ArgReader rdr)
     rdr = CReader compl p
 
 -- | Builder for a 'String' argument.
-strArgument :: Mod ArgumentFields String -> Parser String
+strArgument :: IsString s => Mod ArgumentFields s -> Parser s
 strArgument = argument str
 
 -- | Builder for a flag parser.
@@ -289,7 +289,7 @@ infoOption :: String -> Mod OptionFields (a -> a) -> Parser (a -> a)
 infoOption = abortOption . InfoMsg
 
 -- | Builder for an option taking a 'String' argument.
-strOption :: Mod OptionFields String -> Parser String
+strOption :: IsString s => Mod OptionFields s -> Parser s
 strOption = option str
 
 -- | Same as 'option'.
